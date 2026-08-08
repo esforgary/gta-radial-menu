@@ -639,14 +639,13 @@ const defaultGroups: RadialMenuGroup[] = [
     label: 'Документы',
     icon: 'id-card',
     items: [
-      { id: 'docs:card-id', label: 'Card ID', icon: 'id-card', closeOnSelect: false },
-      { id: 'docs:work-id', label: 'Work ID', icon: 'briefcase', closeOnSelect: false },
+      { id: 'docs:card-id', label: 'Card ID', icon: 'id-card' },
+      { id: 'docs:work-id', label: 'Work ID', icon: 'briefcase' },
       {
         id: 'docs:certificate',
         label: 'Удостоверение',
         shortLabel: 'Удостов.',
         icon: 'badge-check',
-        closeOnSelect: false,
       },
       {
         id: 'docs:transport',
