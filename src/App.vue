@@ -1491,7 +1491,7 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__nested-segments .radial-menu__segment-base {
-  animation: radial-nested-segment-rise 210ms var(--radial-ease-out) both;
+  animation: radial-segment-pop 210ms var(--radial-ease-out) both;
   animation-delay: calc(30ms + var(--delay, 0ms));
 }
 
@@ -1574,7 +1574,7 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__nested-layer .radial-menu__item {
-  animation: radial-nested-item-rise 190ms var(--radial-ease-out) both;
+  animation: radial-item-pop 190ms var(--radial-ease-out) both;
   animation-delay: calc(42ms + var(--delay, 0ms));
 }
 
@@ -1848,23 +1848,6 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes radial-nested-segment-rise {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 76px, 0) scale(0.9);
-  }
-
-  72% {
-    opacity: 1;
-    transform: translate3d(0, 8px, 0) scale(0.985);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
 @keyframes radial-segment-fold {
   0% {
     opacity: 1;
@@ -1892,23 +1875,6 @@ onBeforeUnmount(() => {
   72% {
     opacity: 1;
     transform: translate3d(-50%, -50%, 0) scale(1.08);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate3d(-50%, -50%, 0) scale(1);
-  }
-}
-
-@keyframes radial-nested-item-rise {
-  0% {
-    opacity: 0;
-    transform: translate3d(-50%, calc(-50% + 58px), 0) scale(0.9);
-  }
-
-  72% {
-    opacity: 1;
-    transform: translate3d(-50%, calc(-50% + 6px), 0) scale(0.985);
   }
 
   100% {
