@@ -20,6 +20,12 @@
             <stop offset="100%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0" />
           </radialGradient>
 
+          <radialGradient :id="segmentRippleGradientId" cx="50%" cy="50%" r="64%">
+            <stop offset="0%" stop-color="var(--radial-ripple-color)" stop-opacity="0.66" />
+            <stop offset="58%" stop-color="var(--radial-ripple-color)" stop-opacity="0.34" />
+            <stop offset="100%" stop-color="var(--radial-ripple-color)" stop-opacity="0" />
+          </radialGradient>
+
           <pattern
             :id="segmentRingsId"
             patternUnits="objectBoundingBox"
@@ -27,32 +33,29 @@
             width="1"
             height="1"
           >
-            <circle
+            <ellipse
               cx="0.5"
-              cy="-0.12"
-              r="0.68"
-              fill="none"
-              stroke="var(--radial-ring-color)"
-              stroke-width="0.11"
-              stroke-opacity="0.42"
+              cy="-0.04"
+              rx="0.7"
+              ry="0.34"
+              fill="url(#radialSegmentRippleGradient)"
+              opacity="0.88"
             />
-            <circle
+            <ellipse
               cx="0.44"
-              cy="1.14"
-              r="0.72"
-              fill="none"
-              stroke="var(--radial-ring-color)"
-              stroke-width="0.12"
-              stroke-opacity="0.26"
+              cy="0.94"
+              rx="0.78"
+              ry="0.32"
+              fill="url(#radialSegmentRippleGradient)"
+              opacity="0.62"
             />
-            <circle
-              cx="0.94"
-              cy="0.26"
-              r="0.72"
-              fill="none"
-              stroke="var(--radial-ring-color)"
-              stroke-width="0.08"
-              stroke-opacity="0.16"
+            <ellipse
+              cx="0.82"
+              cy="0.24"
+              rx="0.62"
+              ry="0.22"
+              fill="url(#radialSegmentRippleGradient)"
+              opacity="0.38"
             />
           </pattern>
 
@@ -478,6 +481,7 @@ const closeAnimationWithoutActionsMs = 260
 const centerGradientId = 'radialCenterGradient'
 const segmentGradientId = 'radialSegmentGradient'
 const segmentSheenId = 'radialSegmentSheen'
+const segmentRippleGradientId = 'radialSegmentRippleGradient'
 const segmentRingsId = 'radialSegmentRings'
 const glowFilterId = 'radialPurpleGlow'
 const hoveredActionId = ref<string | null>(null)
@@ -1205,13 +1209,13 @@ onBeforeUnmount(() => {
   --radial-highlight-start: #e13dff;
   --radial-highlight-end: #720080;
   --radial-highlight-sheen: #ff72ff;
-  --radial-ring-color: #fb74ff;
+  --radial-ripple-color: #3a0044;
   --radial-highlight-hover-opacity: 0.52;
   --radial-highlight-active-opacity: 0.96;
   --radial-highlight-sheen-hover-opacity: 0.34;
   --radial-highlight-sheen-active-opacity: 0.58;
-  --radial-highlight-rings-hover-opacity: 0.34;
-  --radial-highlight-rings-active-opacity: 0.62;
+  --radial-highlight-ripple-hover-opacity: 0.32;
+  --radial-highlight-ripple-active-opacity: 0.68;
   --radial-highlight-border: rgba(229, 68, 255, 0.62);
   --radial-highlight-stroke: 1.15;
   --radial-segment-bg: rgba(3, 6, 10, 0.995);
@@ -1365,7 +1369,7 @@ onBeforeUnmount(() => {
   fill: url(#radialSegmentRings);
   opacity: 0;
   pointer-events: none;
-  mix-blend-mode: screen;
+  mix-blend-mode: normal;
   transition: opacity var(--radial-motion-hover) var(--radial-ease-out);
 }
 
@@ -1388,11 +1392,11 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__segment-rings.radial-menu__segment-highlight--hovered {
-  opacity: var(--radial-highlight-rings-hover-opacity);
+  opacity: var(--radial-highlight-ripple-hover-opacity);
 }
 
 .radial-menu__segment-rings.radial-menu__segment-highlight--active {
-  opacity: var(--radial-highlight-rings-active-opacity);
+  opacity: var(--radial-highlight-ripple-active-opacity);
 }
 
 .radial-menu__segment-hit {
