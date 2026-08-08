@@ -9,22 +9,73 @@
             <stop offset="100%" stop-color="var(--radial-center-edge)" stop-opacity="0.98" />
           </radialGradient>
 
-          <linearGradient :id="segmentGradientId" x1="0%" x2="100%" y1="0%" y2="100%">
-            <stop offset="0%" stop-color="var(--radial-highlight-start)" stop-opacity="0.96" />
-            <stop offset="100%" stop-color="var(--radial-highlight-end)" stop-opacity="0.96" />
-          </linearGradient>
+          <radialGradient
+            id="radialSegmentGradientInner"
+            gradientUnits="userSpaceOnUse"
+            :cx="stage.centerX"
+            :cy="stage.centerY"
+            :r="innerRing.outerRadius"
+          >
+            <stop
+              :offset="`${(innerRing.innerRadius / innerRing.outerRadius) * 100}%`"
+              stop-color="var(--radial-highlight-inner)"
+              stop-opacity="var(--radial-highlight-inner-opacity)"
+            />
+            <stop
+              offset="100%"
+              stop-color="var(--radial-highlight-outer)"
+              stop-opacity="var(--radial-highlight-outer-opacity)"
+            />
+          </radialGradient>
+
+          <radialGradient
+            :id="segmentGradientId"
+            gradientUnits="userSpaceOnUse"
+            :cx="stage.centerX"
+            :cy="stage.centerY"
+            :r="outerRing.outerRadius"
+          >
+            <stop
+              :offset="`${(outerRing.innerRadius / outerRing.outerRadius) * 100}%`"
+              stop-color="var(--radial-highlight-inner)"
+              stop-opacity="var(--radial-highlight-inner-opacity)"
+            />
+            <stop
+              offset="100%"
+              stop-color="var(--radial-highlight-outer)"
+              stop-opacity="var(--radial-highlight-outer-opacity)"
+            />
+          </radialGradient>
+
+          <radialGradient
+            id="radialSegmentGradientNested"
+            gradientUnits="userSpaceOnUse"
+            :cx="stage.centerX"
+            :cy="stage.centerY"
+            :r="nestedRing.outerRadius"
+          >
+            <stop
+              :offset="`${(nestedRing.innerRadius / nestedRing.outerRadius) * 100}%`"
+              stop-color="var(--radial-highlight-inner)"
+              stop-opacity="var(--radial-highlight-inner-opacity)"
+            />
+            <stop
+              offset="100%"
+              stop-color="var(--radial-highlight-outer)"
+              stop-opacity="var(--radial-highlight-outer-opacity)"
+            />
+          </radialGradient>
 
           <radialGradient :id="segmentSheenId" cx="50%" cy="4%" r="82%" fx="50%" fy="-8%">
-            <stop offset="0%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0.34" />
-            <stop offset="42%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0.16" />
+            <stop offset="0%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0.16" />
+            <stop offset="42%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0.08" />
             <stop offset="100%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0" />
           </radialGradient>
 
-          <radialGradient :id="segmentRippleGradientId" cx="50%" cy="50%" r="64%">
-            <stop offset="0%" stop-color="var(--radial-ripple-color)" stop-opacity="0.66" />
-            <stop offset="58%" stop-color="var(--radial-ripple-color)" stop-opacity="0.34" />
-            <stop offset="100%" stop-color="var(--radial-ripple-color)" stop-opacity="0" />
-          </radialGradient>
+          <linearGradient :id="segmentRippleGradientId" x1="0%" x2="0%" y1="0%" y2="100%">
+            <stop offset="0%" stop-color="var(--radial-highlight-outer)" stop-opacity="0" />
+            <stop offset="100%" stop-color="var(--radial-highlight-inner)" stop-opacity="var(--radial-ripple-opacity)" />
+          </linearGradient>
 
           <pattern
             :id="segmentRingsId"
@@ -35,27 +86,19 @@
           >
             <ellipse
               cx="0.5"
-              cy="-0.04"
-              rx="0.7"
+              cy="-0.16"
+              rx="0.62"
+              ry="0.3"
+              fill="url(#radialSegmentRippleGradient)"
+              opacity="0.84"
+            />
+            <ellipse
+              cx="0.54"
+              cy="-0.08"
+              rx="0.78"
               ry="0.34"
               fill="url(#radialSegmentRippleGradient)"
-              opacity="0.88"
-            />
-            <ellipse
-              cx="0.44"
-              cy="0.94"
-              rx="0.78"
-              ry="0.32"
-              fill="url(#radialSegmentRippleGradient)"
-              opacity="0.62"
-            />
-            <ellipse
-              cx="0.82"
-              cy="0.24"
-              rx="0.62"
-              ry="0.22"
-              fill="url(#radialSegmentRippleGradient)"
-              opacity="0.38"
+              opacity="0.56"
             />
           </pattern>
 
@@ -1201,23 +1244,28 @@ onBeforeUnmount(() => {
 }
 
 :global(:root) {
+  --radial-font-family: "SF Pro", "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
+    sans-serif;
   --radial-center-core: #c34ad0;
   --radial-center-mid: #871090;
   --radial-center-edge: #220026;
   --radial-glow-color: #e42fff;
   --radial-glow-drop: rgba(228, 47, 255, 0.36);
-  --radial-highlight-start: #e13dff;
-  --radial-highlight-end: #720080;
-  --radial-highlight-sheen: #ff72ff;
-  --radial-ripple-color: #3a0044;
-  --radial-highlight-hover-opacity: 0.52;
-  --radial-highlight-active-opacity: 0.96;
-  --radial-highlight-sheen-hover-opacity: 0.34;
-  --radial-highlight-sheen-active-opacity: 0.58;
-  --radial-highlight-ripple-hover-opacity: 0.32;
-  --radial-highlight-ripple-active-opacity: 0.68;
-  --radial-highlight-border: rgba(229, 68, 255, 0.62);
-  --radial-highlight-stroke: 1.15;
+  --radial-highlight-inner: #e000ff;
+  --radial-highlight-outer: #860099;
+  --radial-highlight-inner-opacity: 1;
+  --radial-highlight-outer-opacity: 0.6;
+  --radial-highlight-sheen: #e000ff;
+  --radial-ripple-opacity: 0.1;
+  --radial-highlight-hover-opacity: 0.5;
+  --radial-highlight-active-opacity: 1;
+  --radial-highlight-sheen-hover-opacity: 0.18;
+  --radial-highlight-sheen-active-opacity: 0.3;
+  --radial-highlight-ripple-hover-opacity: 0.44;
+  --radial-highlight-ripple-active-opacity: 0.76;
+  --radial-highlight-border: #e000ff;
+  --radial-highlight-border-opacity: 0.65;
+  --radial-highlight-stroke: 0.6;
   --radial-segment-bg: rgba(3, 6, 10, 0.995);
   --radial-segment-inner-bg: rgba(8, 7, 14, 0.995);
   --radial-segment-border: rgba(38, 20, 43, 0.62);
@@ -1225,7 +1273,7 @@ onBeforeUnmount(() => {
   --radial-text: #ffffff;
   --radial-text-muted: rgba(255, 255, 255, 0.74);
   --radial-text-hover: rgba(255, 255, 255, 0.9);
-  --radial-center-text: rgba(255, 255, 255, 0.72);
+  --radial-center-text: rgba(255, 255, 255, 0.45);
   --radial-reopen-bg: rgba(14, 5, 19, 0.94);
   --radial-reopen-hover-bg: rgba(98, 16, 110, 0.96);
   --radial-reopen-border: rgba(229, 68, 255, 0.72);
@@ -1242,7 +1290,9 @@ onBeforeUnmount(() => {
   z-index: 40;
   overflow: hidden;
   color: var(--radial-text);
-  font-family: "SF Pro Display", "SF Pro Text", "Segoe UI", Arial, sans-serif;
+  font-family: var(--radial-font-family);
+  font-variation-settings: "wdth" 100;
+  font-weight: 400;
   pointer-events: auto;
 }
 
@@ -1259,9 +1309,9 @@ onBeforeUnmount(() => {
   background: var(--radial-reopen-bg);
   color: var(--radial-text);
   cursor: pointer;
-  font-family: "SF Pro Display", "SF Pro Text", "Segoe UI", Arial, sans-serif;
+  font-family: var(--radial-font-family);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0;
   transition:
     background var(--radial-motion-hover) ease,
@@ -1349,6 +1399,7 @@ onBeforeUnmount(() => {
 .radial-menu__segment-highlight {
   fill: url(#radialSegmentGradient);
   stroke: var(--radial-highlight-border);
+  stroke-opacity: var(--radial-highlight-border-opacity);
   stroke-width: var(--radial-highlight-stroke);
   opacity: 0;
   filter: none;
@@ -1356,6 +1407,18 @@ onBeforeUnmount(() => {
   transition:
     opacity var(--radial-motion-hover) var(--radial-ease-out),
     filter var(--radial-motion-hover) var(--radial-ease-out);
+}
+
+.radial-menu__segment-highlight--inner {
+  fill: url(#radialSegmentGradientInner);
+}
+
+.radial-menu__segment-highlight--outer {
+  fill: url(#radialSegmentGradient);
+}
+
+.radial-menu__segment-highlight--nested {
+  fill: url(#radialSegmentGradientNested);
 }
 
 .radial-menu__segment-sheen {
@@ -1444,6 +1507,8 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: transparent;
   color: var(--radial-text-muted);
+  font-family: var(--radial-font-family);
+  font-weight: 400;
   text-align: center;
   cursor: pointer;
   outline: none;
@@ -1586,7 +1651,7 @@ onBeforeUnmount(() => {
 .radial-menu__item--nested .radial-menu__label {
   min-height: 11px;
   font-size: 9.5px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.05;
 }
 
@@ -1606,7 +1671,7 @@ onBeforeUnmount(() => {
   color: var(--radial-center-text);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.12;
   letter-spacing: 0;
   text-align: center;
