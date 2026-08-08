@@ -1,7 +1,99 @@
 <template>
   <main v-if="visible" class="radial-menu" :class="menuClasses" data-interface="radialMenu" @contextmenu.prevent>
     <section class="radial-menu__stage" :aria-label="title">
-      <svg class="radial-menu__svg" viewBox="0 0 700 350" role="presentation">
+      <svg
+        v-if="currentActionLayer && expandedActionId"
+        class="radial-menu__svg radial-menu__svg--nested"
+        viewBox="0 0 700 350"
+        role="presentation"
+      >
+        <g
+          :key="`nested-segments-${currentActionLayer.key}-${expandedActionId}`"
+          class="radial-menu__nested-segments"
+        >
+          <template
+            v-for="(parent, parentIndex) in currentActionLayer.items"
+            :key="`nested-parent-${currentActionLayer.key}-${parent.id}`"
+          >
+            <template v-if="isActionExpanded(parent)">
+              <template
+                v-for="(child, childIndex) in getVisibleChildren(parent)"
+                :key="`nested-segment-${currentActionLayer.key}-${parent.id}-${child.id}`"
+              >
+                <path
+                  class="radial-menu__segment-base radial-menu__segment-base--nested"
+                  :class="{ 'radial-menu__segment-base--disabled': child.disabled }"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                  :style="getNestedSequentialStyle(childIndex, getVisibleChildren(parent).length)"
+                />
+                <path
+                  class="radial-menu__segment-highlight radial-menu__segment-highlight--nested"
+                  :class="getActionHighlightClass(currentActionLayer, child)"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                />
+                <path
+                  class="radial-menu__segment-sheen radial-menu__segment-sheen--nested"
+                  :class="getActionHighlightClass(currentActionLayer, child)"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                />
+                <path
+                  class="radial-menu__segment-rings radial-menu__segment-rings--nested"
+                  :class="getActionHighlightClass(currentActionLayer, child)"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                />
+                <path
+                  class="radial-menu__segment-hit"
+                  :class="{ 'radial-menu__segment-hit--disabled': child.disabled }"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                  @click="selectActionFromLayer(currentActionLayer, child)"
+                  @pointerdown="pressAction(currentActionLayer, child)"
+                  @pointerup="clearPressedAction"
+                  @pointercancel="clearPressedAction"
+                  @mouseenter="hoverAction(currentActionLayer, child)"
+                  @mouseleave="leaveAction(child)"
+                />
+              </template>
+            </template>
+          </template>
+        </g>
+      </svg>
+
+      <svg class="radial-menu__svg radial-menu__svg--main" viewBox="0 0 700 350" role="presentation">
         <defs>
           <radialGradient :id="centerGradientId" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stop-color="var(--radial-center-core)" stop-opacity="0.96" />
@@ -112,92 +204,6 @@
             </feMerge>
           </filter>
         </defs>
-
-        <g
-          v-if="currentActionLayer && expandedActionId"
-          :key="`nested-segments-${currentActionLayer.key}-${expandedActionId}`"
-          class="radial-menu__nested-segments"
-        >
-          <template
-            v-for="(parent, parentIndex) in currentActionLayer.items"
-            :key="`nested-parent-${currentActionLayer.key}-${parent.id}`"
-          >
-            <template v-if="isActionExpanded(parent)">
-              <template
-                v-for="(child, childIndex) in getVisibleChildren(parent)"
-                :key="`nested-segment-${currentActionLayer.key}-${parent.id}-${child.id}`"
-              >
-                <path
-                  class="radial-menu__segment-base radial-menu__segment-base--nested"
-                  :class="{ 'radial-menu__segment-base--disabled': child.disabled }"
-                  :d="
-                    getNestedSegmentPath(
-                      parentIndex,
-                      currentActionLayer.items.length,
-                      childIndex,
-                      getVisibleChildren(parent).length,
-                    )
-                  "
-                  :style="getNestedSequentialStyle(childIndex, getVisibleChildren(parent).length)"
-                />
-                <path
-                  class="radial-menu__segment-highlight radial-menu__segment-highlight--nested"
-                  :class="getActionHighlightClass(currentActionLayer, child)"
-                  :d="
-                    getNestedSegmentPath(
-                      parentIndex,
-                      currentActionLayer.items.length,
-                      childIndex,
-                      getVisibleChildren(parent).length,
-                    )
-                  "
-                />
-                <path
-                  class="radial-menu__segment-sheen radial-menu__segment-sheen--nested"
-                  :class="getActionHighlightClass(currentActionLayer, child)"
-                  :d="
-                    getNestedSegmentPath(
-                      parentIndex,
-                      currentActionLayer.items.length,
-                      childIndex,
-                      getVisibleChildren(parent).length,
-                    )
-                  "
-                />
-                <path
-                  class="radial-menu__segment-rings radial-menu__segment-rings--nested"
-                  :class="getActionHighlightClass(currentActionLayer, child)"
-                  :d="
-                    getNestedSegmentPath(
-                      parentIndex,
-                      currentActionLayer.items.length,
-                      childIndex,
-                      getVisibleChildren(parent).length,
-                    )
-                  "
-                />
-                <path
-                  class="radial-menu__segment-hit"
-                  :class="{ 'radial-menu__segment-hit--disabled': child.disabled }"
-                  :d="
-                    getNestedSegmentPath(
-                      parentIndex,
-                      currentActionLayer.items.length,
-                      childIndex,
-                      getVisibleChildren(parent).length,
-                    )
-                  "
-                  @click="selectActionFromLayer(currentActionLayer, child)"
-                  @pointerdown="pressAction(currentActionLayer, child)"
-                  @pointerup="clearPressedAction"
-                  @pointercancel="clearPressedAction"
-                  @mouseenter="hoverAction(currentActionLayer, child)"
-                  @mouseleave="leaveAction(child)"
-                />
-              </template>
-            </template>
-          </template>
-        </g>
 
         <g
           v-if="currentActionLayer"
@@ -1349,7 +1355,15 @@ onBeforeUnmount(() => {
 
 .radial-menu__svg {
   overflow: visible;
+  pointer-events: none;
+}
+
+.radial-menu__svg--nested {
   z-index: 1;
+}
+
+.radial-menu__svg--main {
+  z-index: 3;
 }
 
 .radial-menu__action-layer {
@@ -1492,7 +1506,7 @@ onBeforeUnmount(() => {
 
 .radial-menu__nested-segments .radial-menu__segment-base {
   animation: radial-segment-pop 210ms var(--radial-ease-out) both;
-  animation-delay: calc(30ms + var(--delay, 0ms));
+  animation-delay: 30ms;
 }
 
 .radial-menu__item {
@@ -1575,7 +1589,7 @@ onBeforeUnmount(() => {
 
 .radial-menu__nested-layer .radial-menu__item {
   animation: radial-item-pop 190ms var(--radial-ease-out) both;
-  animation-delay: calc(42ms + var(--delay, 0ms));
+  animation-delay: 42ms;
 }
 
 .radial-menu__action-layer--switch-enter .radial-menu__item {
@@ -1600,7 +1614,7 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__action-layer--items {
-  z-index: 3;
+  z-index: 4;
   contain: layout paint style;
   isolation: isolate;
   perspective: 760px;
@@ -1610,7 +1624,7 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__main-items {
-  z-index: 4;
+  z-index: 5;
 }
 
 .radial-menu__item--disabled {
@@ -1658,7 +1672,7 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 50%;
   top: 85.714%;
-  z-index: 5;
+  z-index: 6;
   display: grid;
   width: 28.571%;
   height: 28.571%;
