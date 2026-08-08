@@ -71,48 +71,6 @@
         </defs>
 
         <g
-          v-if="currentActionLayer"
-          :key="`segments-${currentActionLayer.key}`"
-          class="radial-menu__action-segments"
-          :class="getActionSegmentsClass(currentActionLayer)"
-        >
-          <template v-for="(item, index) in currentActionLayer.items" :key="`${currentActionLayer.key}-${item.id}`">
-            <path
-              class="radial-menu__segment-base radial-menu__segment-base--outer"
-              :class="{ 'radial-menu__segment-base--disabled': item.disabled }"
-              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
-              :style="getSequentialStyle(index, currentActionLayer.items.length)"
-            />
-            <path
-              class="radial-menu__segment-highlight radial-menu__segment-highlight--outer"
-              :class="getActionHighlightClass(currentActionLayer, item)"
-              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
-            />
-            <path
-              class="radial-menu__segment-sheen radial-menu__segment-sheen--outer"
-              :class="getActionHighlightClass(currentActionLayer, item)"
-              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
-            />
-            <path
-              class="radial-menu__segment-rings radial-menu__segment-rings--outer"
-              :class="getActionHighlightClass(currentActionLayer, item)"
-              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
-            />
-            <path
-              class="radial-menu__segment-hit"
-              :class="{ 'radial-menu__segment-hit--disabled': item.disabled }"
-              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
-              @click="selectActionFromLayer(currentActionLayer, item)"
-              @pointerdown="pressAction(currentActionLayer, item)"
-              @pointerup="clearPressedAction"
-              @pointercancel="clearPressedAction"
-              @mouseenter="hoverAction(currentActionLayer, item)"
-              @mouseleave="leaveAction(item)"
-            />
-          </template>
-        </g>
-
-        <g
           v-if="currentActionLayer && expandedActionId"
           :key="`nested-segments-${currentActionLayer.key}-${expandedActionId}`"
           class="radial-menu__nested-segments"
@@ -195,6 +153,48 @@
                 />
               </template>
             </template>
+          </template>
+        </g>
+
+        <g
+          v-if="currentActionLayer"
+          :key="`segments-${currentActionLayer.key}`"
+          class="radial-menu__action-segments"
+          :class="getActionSegmentsClass(currentActionLayer)"
+        >
+          <template v-for="(item, index) in currentActionLayer.items" :key="`${currentActionLayer.key}-${item.id}`">
+            <path
+              class="radial-menu__segment-base radial-menu__segment-base--outer"
+              :class="{ 'radial-menu__segment-base--disabled': item.disabled }"
+              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
+              :style="getSequentialStyle(index, currentActionLayer.items.length)"
+            />
+            <path
+              class="radial-menu__segment-highlight radial-menu__segment-highlight--outer"
+              :class="getActionHighlightClass(currentActionLayer, item)"
+              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
+            />
+            <path
+              class="radial-menu__segment-sheen radial-menu__segment-sheen--outer"
+              :class="getActionHighlightClass(currentActionLayer, item)"
+              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
+            />
+            <path
+              class="radial-menu__segment-rings radial-menu__segment-rings--outer"
+              :class="getActionHighlightClass(currentActionLayer, item)"
+              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
+            />
+            <path
+              class="radial-menu__segment-hit"
+              :class="{ 'radial-menu__segment-hit--disabled': item.disabled }"
+              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
+              @click="selectActionFromLayer(currentActionLayer, item)"
+              @pointerdown="pressAction(currentActionLayer, item)"
+              @pointerup="clearPressedAction"
+              @pointercancel="clearPressedAction"
+              @mouseenter="hoverAction(currentActionLayer, item)"
+              @mouseleave="leaveAction(item)"
+            />
           </template>
         </g>
 
@@ -1300,6 +1300,7 @@ onBeforeUnmount(() => {
 
 .radial-menu__svg {
   overflow: visible;
+  z-index: 1;
 }
 
 .radial-menu__action-layer {
@@ -1428,7 +1429,7 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__nested-segments .radial-menu__segment-base {
-  animation: radial-segment-pop 210ms var(--radial-ease-out) both;
+  animation: radial-nested-segment-rise 210ms var(--radial-ease-out) both;
   animation-delay: calc(30ms + var(--delay, 0ms));
 }
 
@@ -1501,6 +1502,7 @@ onBeforeUnmount(() => {
   inset: 0;
   width: 100%;
   height: 100%;
+  z-index: 2;
   contain: layout style;
   isolation: isolate;
   overflow: visible;
@@ -1508,7 +1510,7 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__nested-layer .radial-menu__item {
-  animation: radial-item-pop 190ms var(--radial-ease-out) both;
+  animation: radial-nested-item-rise 190ms var(--radial-ease-out) both;
   animation-delay: calc(42ms + var(--delay, 0ms));
 }
 
@@ -1534,12 +1536,17 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__action-layer--items {
+  z-index: 3;
   contain: layout paint style;
   isolation: isolate;
   perspective: 760px;
   transform: translate3d(0, 0, 0);
   transform-style: preserve-3d;
   will-change: transform;
+}
+
+.radial-menu__main-items {
+  z-index: 4;
 }
 
 .radial-menu__item--disabled {
@@ -1587,6 +1594,7 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 50%;
   top: 85.714%;
+  z-index: 5;
   display: grid;
   width: 28.571%;
   height: 28.571%;
@@ -1776,6 +1784,23 @@ onBeforeUnmount(() => {
   }
 }
 
+@keyframes radial-nested-segment-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 76px, 0) scale(0.9);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translate3d(0, 8px, 0) scale(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 @keyframes radial-segment-fold {
   0% {
     opacity: 1;
@@ -1803,6 +1828,23 @@ onBeforeUnmount(() => {
   72% {
     opacity: 1;
     transform: translate3d(-50%, -50%, 0) scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+}
+
+@keyframes radial-nested-item-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, calc(-50% + 58px), 0) scale(0.9);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translate3d(-50%, calc(-50% + 6px), 0) scale(0.985);
   }
 
   100% {
