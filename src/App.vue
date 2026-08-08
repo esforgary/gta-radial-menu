@@ -4,24 +4,26 @@
       <svg class="radial-menu__svg" viewBox="0 0 700 350" role="presentation">
         <defs>
           <radialGradient :id="centerGradientId" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#bd46c9" stop-opacity="0.96" />
-            <stop offset="56%" stop-color="#7a0c86" stop-opacity="0.92" />
-            <stop offset="100%" stop-color="#20002b" stop-opacity="0.98" />
+            <stop offset="0%" stop-color="var(--radial-center-core)" stop-opacity="0.96" />
+            <stop offset="56%" stop-color="var(--radial-center-mid)" stop-opacity="0.92" />
+            <stop offset="100%" stop-color="var(--radial-center-edge)" stop-opacity="0.98" />
           </radialGradient>
 
           <linearGradient :id="segmentGradientId" x1="0%" x2="100%" y1="0%" y2="100%">
-            <stop offset="0%" stop-color="#e13dff" stop-opacity="0.96" />
-            <stop offset="100%" stop-color="#7e008d" stop-opacity="0.96" />
+            <stop offset="0%" stop-color="var(--radial-highlight-start)" stop-opacity="0.96" />
+            <stop offset="100%" stop-color="var(--radial-highlight-end)" stop-opacity="0.96" />
           </linearGradient>
+
+          <radialGradient :id="segmentSheenId" cx="50%" cy="4%" r="82%" fx="50%" fy="-8%">
+            <stop offset="0%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0.34" />
+            <stop offset="42%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0.16" />
+            <stop offset="100%" stop-color="var(--radial-highlight-sheen)" stop-opacity="0" />
+          </radialGradient>
 
           <filter :id="glowFilterId" x="-46%" y="-46%" width="192%" height="192%">
             <feGaussianBlur stdDeviation="8" result="blur" />
-            <feColorMatrix
-              in="blur"
-              result="glow"
-              type="matrix"
-              values="0 0 0 0 0.9 0 0 0 0 0.12 0 0 0 0 1 0 0 0 0.52 0"
-            />
+            <feFlood flood-color="var(--radial-glow-color)" flood-opacity="0.52" result="glowColor" />
+            <feComposite in="glowColor" in2="blur" operator="in" result="glow" />
             <feMerge>
               <feMergeNode in="glow" />
               <feMergeNode in="SourceGraphic" />
@@ -48,6 +50,11 @@
               :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
             />
             <path
+              class="radial-menu__segment-sheen radial-menu__segment-sheen--outer"
+              :class="getActionHighlightClass(currentActionLayer, item)"
+              :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
+            />
+            <path
               class="radial-menu__segment-hit"
               :class="{ 'radial-menu__segment-hit--disabled': item.disabled }"
               :d="getSegmentPath(index, currentActionLayer.items.length, outerRing)"
@@ -61,6 +68,80 @@
           </template>
         </g>
 
+        <g
+          v-if="currentActionLayer && expandedActionId"
+          :key="`nested-segments-${currentActionLayer.key}-${expandedActionId}`"
+          class="radial-menu__nested-segments"
+        >
+          <template
+            v-for="(parent, parentIndex) in currentActionLayer.items"
+            :key="`nested-parent-${currentActionLayer.key}-${parent.id}`"
+          >
+            <template v-if="isActionExpanded(parent)">
+              <template
+                v-for="(child, childIndex) in getVisibleChildren(parent)"
+                :key="`nested-segment-${currentActionLayer.key}-${parent.id}-${child.id}`"
+              >
+                <path
+                  class="radial-menu__segment-base radial-menu__segment-base--nested"
+                  :class="{ 'radial-menu__segment-base--disabled': child.disabled }"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                  :style="getNestedSequentialStyle(childIndex, getVisibleChildren(parent).length)"
+                />
+                <path
+                  class="radial-menu__segment-highlight radial-menu__segment-highlight--nested"
+                  :class="getActionHighlightClass(currentActionLayer, child)"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                />
+                <path
+                  class="radial-menu__segment-sheen radial-menu__segment-sheen--nested"
+                  :class="getActionHighlightClass(currentActionLayer, child)"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                />
+                <path
+                  class="radial-menu__segment-hit"
+                  :class="{ 'radial-menu__segment-hit--disabled': child.disabled }"
+                  :d="
+                    getNestedSegmentPath(
+                      parentIndex,
+                      currentActionLayer.items.length,
+                      childIndex,
+                      getVisibleChildren(parent).length,
+                    )
+                  "
+                  @click="selectActionFromLayer(currentActionLayer, child)"
+                  @pointerdown="pressAction(currentActionLayer, child)"
+                  @pointerup="clearPressedAction"
+                  @pointercancel="clearPressedAction"
+                  @mouseenter="hoverAction(currentActionLayer, child)"
+                  @mouseleave="leaveAction(child)"
+                />
+              </template>
+            </template>
+          </template>
+        </g>
+
         <g class="radial-menu__main-segments">
           <template v-for="(group, index) in groups" :key="group.id">
             <path
@@ -71,6 +152,11 @@
             />
             <path
               class="radial-menu__segment-highlight radial-menu__segment-highlight--inner"
+              :class="getMainHighlightClass(group)"
+              :d="getSegmentPath(index, groups.length, innerRing)"
+            />
+            <path
+              class="radial-menu__segment-sheen radial-menu__segment-sheen--inner"
               :class="getMainHighlightClass(group)"
               :d="getSegmentPath(index, groups.length, innerRing)"
             />
@@ -99,8 +185,13 @@
           :key="`action-${layer.key}-${item.id}`"
           class="radial-menu__item radial-menu__item--outer"
           :class="{
-            'radial-menu__item--active': isActionLayerInteractive(layer) && pressedActionId === item.id,
-            'radial-menu__item--hovered': isActionLayerInteractive(layer) && hoveredActionId === item.id && pressedActionId !== item.id,
+            'radial-menu__item--active':
+              isActionLayerInteractive(layer) && (pressedActionId === item.id || expandedActionId === item.id),
+            'radial-menu__item--hovered':
+              isActionLayerInteractive(layer) &&
+              hoveredActionId === item.id &&
+              pressedActionId !== item.id &&
+              expandedActionId !== item.id,
             'radial-menu__item--disabled': item.disabled,
           }"
           :style="getItemStyle(index, layer.items.length, outerRing.labelRadius)"
@@ -116,9 +207,56 @@
         >
           <span class="radial-menu__item-content">
             <component :is="iconComponent(item.icon)" class="radial-menu__icon" :size="25" :stroke-width="2.2" />
-            <span class="radial-menu__label">{{ item.label }}</span>
+            <span class="radial-menu__label">{{ item.shortLabel || item.label }}</span>
           </span>
         </button>
+      </div>
+
+      <div
+        v-if="currentActionLayer && expandedActionId"
+        :key="`nested-items-${currentActionLayer.key}-${expandedActionId}`"
+        class="radial-menu__nested-layer"
+      >
+        <template
+          v-for="(parent, parentIndex) in currentActionLayer.items"
+          :key="`nested-item-parent-${currentActionLayer.key}-${parent.id}`"
+        >
+          <template v-if="isActionExpanded(parent)">
+            <button
+              v-for="(child, childIndex) in getVisibleChildren(parent)"
+              :key="`nested-action-${currentActionLayer.key}-${parent.id}-${child.id}`"
+              class="radial-menu__item radial-menu__item--nested"
+              :class="{
+                'radial-menu__item--active': isActionLayerInteractive(currentActionLayer) && pressedActionId === child.id,
+                'radial-menu__item--hovered':
+                  isActionLayerInteractive(currentActionLayer) && hoveredActionId === child.id && pressedActionId !== child.id,
+                'radial-menu__item--disabled': child.disabled,
+              }"
+              :style="
+                getNestedItemStyle(
+                  parentIndex,
+                  currentActionLayer.items.length,
+                  childIndex,
+                  getVisibleChildren(parent).length,
+                )
+              "
+              type="button"
+              :aria-disabled="child.disabled ? 'true' : 'false'"
+              :title="child.disabledReason || child.description || child.label"
+              @click="selectActionFromLayer(currentActionLayer, child)"
+              @pointerdown="pressAction(currentActionLayer, child)"
+              @pointerup="clearPressedAction"
+              @pointercancel="clearPressedAction"
+              @mouseenter="hoverAction(currentActionLayer, child)"
+              @mouseleave="leaveAction(child)"
+            >
+              <span class="radial-menu__item-content">
+                <component :is="iconComponent(child.icon)" class="radial-menu__icon" :size="19" :stroke-width="2.2" />
+                <span class="radial-menu__label">{{ child.shortLabel || child.label }}</span>
+              </span>
+            </button>
+          </template>
+        </template>
       </div>
 
       <div class="radial-menu__main-items">
@@ -162,32 +300,52 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   Armchair,
   Badge,
+  BadgeCheck,
   Banknote,
+  Bike,
   BriefcaseBusiness,
   Building2,
   Car,
+  CarFront,
   Circle,
   CirclePower,
+  ClipboardCheck,
+  CreditCard,
+  Crosshair,
   DoorClosed,
   DoorOpen,
   Drama,
+  FileBadge,
+  FileCheck,
   FileText,
   FileUser,
+  Fish,
   Footprints,
   Hand,
   HandCoins,
   Handshake,
+  HeartPulse,
   House,
   IdCard,
   KeyRound,
+  Landmark,
   LockOpen,
   PackageOpen,
+  Plane,
+  Sailboat,
   ScanSearch,
+  Scale,
+  ScrollText,
   Shield,
+  ShieldCheck,
+  Store,
+  Truck,
   UserRound,
+  Users,
   VenetianMask,
   Wallet,
   Wrench,
+  Cannabis,
 } from 'lucide-vue-next'
 
 interface Point {
@@ -204,12 +362,14 @@ interface RingGeometry {
 interface RadialMenuAction {
   id: string
   label: string
+  shortLabel?: string
   icon?: string
   description?: string
   disabled?: boolean
   disabledReason?: string
   hidden?: boolean
   closeOnSelect?: boolean
+  children?: RadialMenuAction[]
 }
 
 interface RadialMenuGroup {
@@ -250,18 +410,20 @@ const arcStart = 180
 const arcEnd = 360
 const segmentOverlapDegrees = 0.5
 const centerRadius = 100
-const actionLayerStaggerMs = 54
-const closeLayerStaggerMs = 27
+const actionLayerStaggerMs = 27
+const closeLayerStaggerMs = 14
 const actionSwitchLeaveMs = 87
 const actionSwitchEnterMs = 150
 const actionSwitchMs = actionSwitchLeaveMs + actionSwitchEnterMs
-const closeAnimationMs = 820
-const closeAnimationWithoutActionsMs = 520
+const closeAnimationMs = 410
+const closeAnimationWithoutActionsMs = 260
 const centerGradientId = 'radialCenterGradient'
 const segmentGradientId = 'radialSegmentGradient'
+const segmentSheenId = 'radialSegmentSheen'
 const glowFilterId = 'radialPurpleGlow'
 const hoveredActionId = ref<string | null>(null)
 const hoveredGroupId = ref<string | null>(null)
+const expandedActionId = ref<string | null>(null)
 const payloadState = ref<RadialMenuPayload>({})
 const selectedGroupId = ref<string | null>(null)
 const pressedActionId = ref<string | null>(null)
@@ -278,6 +440,12 @@ const outerRing: RingGeometry = {
   labelRadius: 302,
 }
 
+const nestedRing: RingGeometry = {
+  innerRadius: 360,
+  outerRadius: 432,
+  labelRadius: 397,
+}
+
 const innerRing: RingGeometry = {
   innerRadius: 112,
   outerRadius: 225,
@@ -287,28 +455,48 @@ const innerRing: RingGeometry = {
 const iconComponents: Record<string, Component> = {
   armchair: Armchair,
   badge: Badge,
+  'badge-check': BadgeCheck,
   banknote: Banknote,
+  bike: Bike,
   briefcase: BriefcaseBusiness,
   building: Building2,
   car: Car,
+  cannabis: Cannabis,
+  'car-front': CarFront,
   'circle-power': CirclePower,
+  'clipboard-check': ClipboardCheck,
+  'credit-card': CreditCard,
+  crosshair: Crosshair,
   'door-closed': DoorClosed,
   'door-open': DoorOpen,
   drama: Drama,
+  'file-badge': FileBadge,
+  'file-check': FileCheck,
   'file-text': FileText,
   'file-user': FileUser,
+  fish: Fish,
   footprints: Footprints,
   hand: Hand,
   'hand-coins': HandCoins,
   handshake: Handshake,
+  'heart-pulse': HeartPulse,
   house: House,
   'id-card': IdCard,
   key: KeyRound,
+  landmark: Landmark,
   'lock-open': LockOpen,
   'package-open': PackageOpen,
+  plane: Plane,
+  sailboat: Sailboat,
   'scan-search': ScanSearch,
+  scale: Scale,
+  'scroll-text': ScrollText,
   shield: Shield,
+  'shield-check': ShieldCheck,
+  store: Store,
+  truck: Truck,
   user: UserRound,
+  users: Users,
   'venetian-mask': VenetianMask,
   wallet: Wallet,
   wrench: Wrench,
@@ -345,9 +533,111 @@ const defaultGroups: RadialMenuGroup[] = [
     label: 'Документы',
     icon: 'id-card',
     items: [
-      { id: 'docs:passport', label: 'Паспорт', icon: 'id-card' },
-      { id: 'docs:vehicle', label: 'На авто', icon: 'file-text' },
-      { id: 'docs:military', label: 'Военный', icon: 'file-user' },
+      { id: 'docs:card-id', label: 'Card ID', icon: 'id-card' },
+      { id: 'docs:work-id', label: 'Work ID', icon: 'briefcase' },
+      { id: 'docs:certificate', label: 'Удостоверение', shortLabel: 'Удостов.', icon: 'badge-check' },
+      {
+        id: 'docs:transport',
+        label: 'Транспорт',
+        icon: 'car-front',
+        closeOnSelect: false,
+        children: [
+          {
+            id: 'docs:transport:a',
+            label: 'Лицензия категории А',
+            shortLabel: 'Кат. A',
+            icon: 'bike',
+          },
+          {
+            id: 'docs:transport:b',
+            label: 'Лицензия категории B',
+            shortLabel: 'Кат. B',
+            icon: 'car-front',
+          },
+          {
+            id: 'docs:transport:c',
+            label: 'Лицензия категории C',
+            shortLabel: 'Кат. C',
+            icon: 'truck',
+          },
+          {
+            id: 'docs:transport:air',
+            label: 'Лицензия на авиатранспорт',
+            shortLabel: 'Авиа',
+            icon: 'plane',
+          },
+          {
+            id: 'docs:transport:water',
+            label: 'Лицензия на водный транспорт',
+            shortLabel: 'Вода',
+            icon: 'sailboat',
+          },
+        ],
+      },
+      {
+        id: 'docs:permits',
+        label: 'Разрешения',
+        icon: 'shield-check',
+        closeOnSelect: false,
+        children: [
+          {
+            id: 'docs:permits:weapon',
+            label: 'Лицензия на оружие',
+            shortLabel: 'Оружие',
+            icon: 'crosshair',
+          },
+          {
+            id: 'docs:permits:fishing',
+            label: 'Разрешение на рыболовство',
+            shortLabel: 'Рыбалка',
+            icon: 'fish',
+          },
+          {
+            id: 'docs:permits:hunting',
+            label: 'Разрешение на охоту',
+            shortLabel: 'Охота',
+            icon: 'crosshair',
+          },
+        ],
+      },
+      {
+        id: 'docs:misc',
+        label: 'Прочее',
+        icon: 'scroll-text',
+        closeOnSelect: false,
+        children: [
+          {
+            id: 'docs:misc:passengers',
+            label: 'Лицензия на перевозку пассажиров',
+            shortLabel: 'Пассаж.',
+            icon: 'users',
+          },
+          {
+            id: 'docs:misc:lawyer',
+            label: 'Лицензия юриста',
+            shortLabel: 'Юрист',
+            icon: 'scale',
+          },
+          {
+            id: 'docs:misc:business',
+            label: 'Лицензия на предпринимательство',
+            shortLabel: 'Бизнес',
+            icon: 'store',
+          },
+          {
+            id: 'docs:misc:insurance',
+            label: 'Мед. страховка',
+            shortLabel: 'Мед.',
+            icon: 'heart-pulse',
+          },
+          {
+            id: 'docs:misc:marijuana',
+            label: 'Разрешение на употребление марихуаны',
+            shortLabel: 'Марих.',
+            icon: 'cannabis',
+          },
+        ],
+      },
     ],
   },
   {
@@ -392,7 +682,12 @@ const groups = computed(() => {
     .map((group) => ({
       ...group,
       icon: group.icon || 'circle',
-      items: group.items.filter((item) => !item.hidden),
+      items: group.items
+        .filter((item) => !item.hidden)
+        .map((item) => ({
+          ...item,
+          children: item.children?.filter((child) => !child.hidden),
+        })),
     }))
     .filter((group) => group.items.length > 0)
 })
@@ -468,12 +763,21 @@ function resetActionLayers() {
   leavingActionLayers.value = []
   currentActionLayer.value = null
   selectedGroupId.value = null
+  expandedActionId.value = null
   hoveredActionId.value = null
   pressedActionId.value = null
 }
 
 function iconComponent(name?: string) {
   return iconComponents[name || ''] || Circle
+}
+
+function getVisibleChildren(action: RadialMenuAction) {
+  return action.children?.filter((child) => !child.hidden) || []
+}
+
+function isActionExpanded(action: RadialMenuAction) {
+  return expandedActionId.value === action.id && getVisibleChildren(action).length > 0
 }
 
 function getSequentialStyle(index: number, total: number) {
@@ -509,7 +813,7 @@ function getMainHighlightClass(group: RadialMenuGroup) {
 
 function getActionHighlightClass(layer: ActionLayer, item: RadialMenuAction) {
   const interactive = isActionLayerInteractive(layer)
-  const active = interactive && pressedActionId.value === item.id
+  const active = interactive && (pressedActionId.value === item.id || expandedActionId.value === item.id)
   const hovered = interactive && !active && hoveredActionId.value === item.id
 
   return {
@@ -535,6 +839,10 @@ function getSegmentPath(index: number, total: number, geometry: RingGeometry) {
   const step = (arcEnd - arcStart) / total
   const startAngle = arcStart + index * step - segmentOverlapDegrees
   const endAngle = arcStart + (index + 1) * step + segmentOverlapDegrees
+  return getSegmentPathByAngles(startAngle, endAngle, geometry)
+}
+
+function getSegmentPathByAngles(startAngle: number, endAngle: number, geometry: RingGeometry) {
   const outerStart = polarToCartesian(startAngle, geometry.outerRadius)
   const outerEnd = polarToCartesian(endAngle, geometry.outerRadius)
   const innerEnd = polarToCartesian(endAngle, geometry.innerRadius)
@@ -550,6 +858,27 @@ function getSegmentPath(index: number, total: number, geometry: RingGeometry) {
   ].join(' ')
 }
 
+function getNestedArc(parentIndex: number, parentTotal: number, childTotal: number) {
+  const parentStep = (arcEnd - arcStart) / Math.max(parentTotal, 1)
+  const parentCenter = arcStart + parentIndex * parentStep + parentStep / 2
+  const span = Math.min(76, Math.max(48, childTotal * 12 + 16))
+  const halfSpan = span / 2
+  const center = Math.min(arcEnd - halfSpan, Math.max(arcStart + halfSpan, parentCenter))
+
+  return {
+    start: center - halfSpan,
+    step: span / Math.max(childTotal, 1),
+  }
+}
+
+function getNestedSegmentPath(parentIndex: number, parentTotal: number, childIndex: number, childTotal: number) {
+  const arc = getNestedArc(parentIndex, parentTotal, childTotal)
+  const startAngle = arc.start + childIndex * arc.step - 0.35
+  const endAngle = arc.start + (childIndex + 1) * arc.step + 0.35
+
+  return getSegmentPathByAngles(startAngle, endAngle, nestedRing)
+}
+
 function getItemStyle(index: number, total: number, radius: number) {
   const point = getItemPosition(index, total, radius)
   const shift = getCenterShift(point, 28)
@@ -558,6 +887,29 @@ function getItemStyle(index: number, total: number, radius: number) {
     '--delay': `${index * actionLayerStaggerMs}ms`,
     '--reverse-delay': `${Math.max(total - 1 - index, 0) * actionLayerStaggerMs}ms`,
     '--close-reverse-delay': `${Math.max(total - 1 - index, 0) * closeLayerStaggerMs}ms`,
+    '--shift-x': `${shift.x}px`,
+    '--shift-y': `${shift.y}px`,
+    left: `${(point.x / stage.width) * 100}%`,
+    top: `${(point.y / stage.height) * 100}%`,
+  }
+}
+
+function getNestedSequentialStyle(index: number, total: number) {
+  return {
+    '--delay': `${index * actionLayerStaggerMs}ms`,
+    '--reverse-delay': `${Math.max(total - 1 - index, 0) * actionLayerStaggerMs}ms`,
+    '--close-reverse-delay': `${Math.max(total - 1 - index, 0) * closeLayerStaggerMs}ms`,
+  }
+}
+
+function getNestedItemStyle(parentIndex: number, parentTotal: number, childIndex: number, childTotal: number) {
+  const arc = getNestedArc(parentIndex, parentTotal, childTotal)
+  const angle = arc.start + childIndex * arc.step + arc.step / 2
+  const point = polarToCartesian(angle, nestedRing.labelRadius)
+  const shift = getCenterShift(point, 22)
+
+  return {
+    ...getNestedSequentialStyle(childIndex, childTotal),
     '--shift-x': `${shift.x}px`,
     '--shift-y': `${shift.y}px`,
     left: `${(point.x / stage.width) * 100}%`,
@@ -630,6 +982,7 @@ function selectGroup(group: RadialMenuGroup) {
 
   currentActionLayer.value = nextLayer
   selectedGroupId.value = group.id
+  expandedActionId.value = null
   hoveredActionId.value = null
   pressedActionId.value = null
 
@@ -647,7 +1000,7 @@ function selectGroup(group: RadialMenuGroup) {
 }
 
 function pressAction(layer: ActionLayer, action: RadialMenuAction) {
-  if (isClosing.value || !isActionLayerInteractive(layer)) {
+  if (isClosing.value || action.disabled || !isActionLayerInteractive(layer)) {
     return
   }
 
@@ -659,7 +1012,7 @@ function clearPressedAction() {
 }
 
 function hoverAction(layer: ActionLayer, action: RadialMenuAction) {
-  if (isClosing.value || !isActionLayerInteractive(layer)) {
+  if (isClosing.value || action.disabled || !isActionLayerInteractive(layer)) {
     return
   }
 
@@ -681,7 +1034,27 @@ function selectActionFromLayer(layer: ActionLayer, action: RadialMenuAction) {
     return
   }
 
+  if (getVisibleChildren(action).length > 0) {
+    toggleActionChildren(action)
+    return
+  }
+
   selectAction(action)
+}
+
+function toggleActionChildren(action: RadialMenuAction) {
+  if (action.disabled) {
+    return
+  }
+
+  pressedActionId.value = action.id
+  expandedActionId.value = expandedActionId.value === action.id ? null : action.id
+
+  window.setTimeout(() => {
+    if (pressedActionId.value === action.id) {
+      pressedActionId.value = null
+    }
+  }, 110)
 }
 
 function selectAction(action: RadialMenuAction) {
@@ -758,12 +1131,45 @@ onBeforeUnmount(() => {
   background: #ffffff;
 }
 
+:global(:root) {
+  --radial-center-core: #c34ad0;
+  --radial-center-mid: #871090;
+  --radial-center-edge: #220026;
+  --radial-glow-color: #e42fff;
+  --radial-glow-drop: rgba(228, 47, 255, 0.36);
+  --radial-highlight-start: #e13dff;
+  --radial-highlight-end: #720080;
+  --radial-highlight-sheen: #ff72ff;
+  --radial-highlight-hover-opacity: 0.52;
+  --radial-highlight-active-opacity: 0.96;
+  --radial-highlight-sheen-hover-opacity: 0.34;
+  --radial-highlight-sheen-active-opacity: 0.58;
+  --radial-highlight-border: rgba(229, 68, 255, 0.62);
+  --radial-highlight-stroke: 1.15;
+  --radial-segment-bg: rgba(3, 6, 10, 0.995);
+  --radial-segment-inner-bg: rgba(8, 7, 14, 0.995);
+  --radial-segment-border: rgba(38, 20, 43, 0.62);
+  --radial-nested-bg: rgba(4, 5, 9, 0.995);
+  --radial-text: #ffffff;
+  --radial-text-muted: rgba(255, 255, 255, 0.74);
+  --radial-text-hover: rgba(255, 255, 255, 0.9);
+  --radial-center-text: rgba(255, 255, 255, 0.72);
+  --radial-reopen-bg: rgba(14, 5, 19, 0.94);
+  --radial-reopen-hover-bg: rgba(98, 16, 110, 0.96);
+  --radial-reopen-border: rgba(229, 68, 255, 0.72);
+  --radial-shadow-strong: rgba(0, 0, 0, 0.76);
+  --radial-icon-shadow: rgba(255, 255, 255, 0.12);
+  --radial-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --radial-ease-in: cubic-bezier(0.45, 0, 0.9, 0.48);
+  --radial-motion-hover: 210ms;
+}
+
 .radial-menu {
   position: fixed;
   inset: 0;
   z-index: 40;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--radial-text);
   font-family: "SF Pro Display", "SF Pro Text", "Segoe UI", Arial, sans-serif;
   pointer-events: auto;
 }
@@ -776,22 +1182,22 @@ onBeforeUnmount(() => {
   min-width: 142px;
   height: 40px;
   transform: translateX(-50%);
-  border: 1px solid rgba(224, 61, 255, 0.72);
+  border: 1px solid var(--radial-reopen-border);
   border-radius: 6px;
-  background: rgba(14, 5, 19, 0.94);
-  color: #ffffff;
+  background: var(--radial-reopen-bg);
+  color: var(--radial-text);
   cursor: pointer;
   font-family: "SF Pro Display", "SF Pro Text", "Segoe UI", Arial, sans-serif;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0;
   transition:
-    background 180ms ease,
-    transform 180ms ease;
+    background var(--radial-motion-hover) ease,
+    transform var(--radial-motion-hover) ease;
 }
 
 .radial-menu__reopen:hover {
-  background: rgba(98, 16, 110, 0.96);
+  background: var(--radial-reopen-hover-bg);
   transform: translateX(-50%) translateY(-1px);
 }
 
@@ -830,6 +1236,7 @@ onBeforeUnmount(() => {
 
 .radial-menu__segment-base,
 .radial-menu__segment-highlight,
+.radial-menu__segment-sheen,
 .radial-menu__segment-hit {
   transform-box: view-box;
   transform-origin: 50% 100%;
@@ -845,15 +1252,20 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu__segment-base {
-  fill: rgba(3, 6, 10, 0.995);
-  stroke: rgba(3, 6, 10, 0.995);
-  stroke-width: 2;
+  fill: var(--radial-segment-bg);
+  stroke: var(--radial-segment-border);
+  stroke-width: 0.9;
   stroke-linejoin: round;
 }
 
 .radial-menu__segment-base--inner {
-  fill: rgba(8, 7, 14, 0.995);
-  stroke: rgba(8, 7, 14, 0.995);
+  fill: var(--radial-segment-inner-bg);
+  stroke: var(--radial-segment-border);
+}
+
+.radial-menu__segment-base--nested {
+  fill: var(--radial-nested-bg);
+  stroke: var(--radial-segment-border);
 }
 
 .radial-menu__segment-base--disabled {
@@ -862,20 +1274,40 @@ onBeforeUnmount(() => {
 
 .radial-menu__segment-highlight {
   fill: url(#radialSegmentGradient);
+  stroke: var(--radial-highlight-border);
+  stroke-width: var(--radial-highlight-stroke);
   opacity: 0;
   filter: none;
   pointer-events: none;
-  transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity var(--radial-motion-hover) var(--radial-ease-out),
+    filter var(--radial-motion-hover) var(--radial-ease-out);
 }
 
-.radial-menu__segment-highlight--hovered {
-  opacity: 0.5;
+.radial-menu__segment-sheen {
+  fill: url(#radialSegmentSheen);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  transition: opacity var(--radial-motion-hover) var(--radial-ease-out);
+}
+
+.radial-menu__segment-highlight.radial-menu__segment-highlight--hovered {
+  opacity: var(--radial-highlight-hover-opacity);
   filter: url(#radialPurpleGlow);
 }
 
-.radial-menu__segment-highlight--active {
-  opacity: 1;
+.radial-menu__segment-highlight.radial-menu__segment-highlight--active {
+  opacity: var(--radial-highlight-active-opacity);
   filter: url(#radialPurpleGlow);
+}
+
+.radial-menu__segment-sheen.radial-menu__segment-highlight--hovered {
+  opacity: var(--radial-highlight-sheen-hover-opacity);
+}
+
+.radial-menu__segment-sheen.radial-menu__segment-highlight--active {
+  opacity: var(--radial-highlight-sheen-active-opacity);
 }
 
 .radial-menu__segment-hit {
@@ -890,20 +1322,25 @@ onBeforeUnmount(() => {
 
 .radial-menu__center-orb {
   fill: url(#radialCenterGradient);
-  filter: drop-shadow(0 0 28px rgba(222, 47, 255, 0.36));
+  filter: drop-shadow(0 0 28px var(--radial-glow-drop));
   transform-box: fill-box;
   transform-origin: center;
-  animation: radial-center-pop 430ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: radial-center-pop 215ms var(--radial-ease-out) both;
 }
 
 .radial-menu__main-segments .radial-menu__segment-base {
-  animation: radial-segment-pop 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(260ms + var(--delay, 0ms));
+  animation: radial-segment-pop 240ms var(--radial-ease-out) both;
+  animation-delay: calc(130ms + var(--delay, 0ms));
 }
 
 .radial-menu__action-segments--pop .radial-menu__segment-base {
-  animation: radial-segment-pop 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: radial-segment-pop 240ms var(--radial-ease-out) both;
   animation-delay: var(--delay, 0ms);
+}
+
+.radial-menu__nested-segments .radial-menu__segment-base {
+  animation: radial-segment-pop 210ms var(--radial-ease-out) both;
+  animation-delay: calc(30ms + var(--delay, 0ms));
 }
 
 .radial-menu__item {
@@ -916,17 +1353,17 @@ onBeforeUnmount(() => {
   border: 0;
   overflow: hidden;
   background: transparent;
-  color: rgba(255, 255, 255, 0.74);
+  color: var(--radial-text-muted);
   text-align: center;
   cursor: pointer;
   outline: none;
   backface-visibility: visible;
   pointer-events: auto;
   transition:
-    color 420ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 420ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 420ms cubic-bezier(0.16, 1, 0.3, 1);
+    color var(--radial-motion-hover) var(--radial-ease-out),
+    opacity var(--radial-motion-hover) var(--radial-ease-out),
+    transform var(--radial-motion-hover) var(--radial-ease-out),
+    filter var(--radial-motion-hover) var(--radial-ease-out);
 }
 
 .radial-menu__item-content {
@@ -955,33 +1392,54 @@ onBeforeUnmount(() => {
   height: 58px;
 }
 
+.radial-menu__item--nested {
+  width: 64px;
+  height: 45px;
+}
+
 .radial-menu__main-items .radial-menu__item {
-  animation: radial-item-pop 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(340ms + var(--delay, 0ms));
+  animation: radial-item-pop 210ms var(--radial-ease-out) both;
+  animation-delay: calc(170ms + var(--delay, 0ms));
 }
 
 .radial-menu__action-layer--pop .radial-menu__item {
-  animation: radial-item-pop 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(80ms + var(--delay, 0ms));
+  animation: radial-item-pop 210ms var(--radial-ease-out) both;
+  animation-delay: calc(40ms + var(--delay, 0ms));
+}
+
+.radial-menu__nested-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  contain: layout style;
+  isolation: isolate;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.radial-menu__nested-layer .radial-menu__item {
+  animation: radial-item-pop 190ms var(--radial-ease-out) both;
+  animation-delay: calc(42ms + var(--delay, 0ms));
 }
 
 .radial-menu__action-layer--switch-enter .radial-menu__item {
-  animation: radial-action-item-enter-center 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: radial-action-item-enter-center 150ms var(--radial-ease-out) both;
   animation-delay: 87ms;
 }
 
 .radial-menu__action-layer--switch-leave .radial-menu__item {
-  animation: radial-action-item-leave-center 87ms cubic-bezier(0.45, 0, 0.9, 0.48) both;
+  animation: radial-action-item-leave-center 87ms var(--radial-ease-in) both;
 }
 
 .radial-menu__item--hovered {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--radial-text-hover);
   filter: none;
   transform: translate3d(-50%, -50%, 0) scale(1.02);
 }
 
 .radial-menu__item--active {
-  color: #ffffff;
+  color: var(--radial-text);
   filter: none;
   transform: translate3d(-50%, -50%, 0) scale(1.045);
 }
@@ -1005,7 +1463,12 @@ onBeforeUnmount(() => {
   width: 25px;
   height: 25px;
   color: currentColor;
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.12));
+  filter: drop-shadow(0 0 5px var(--radial-icon-shadow));
+}
+
+.radial-menu__item--nested .radial-menu__icon {
+  width: 18px;
+  height: 18px;
 }
 
 .radial-menu__label {
@@ -1019,9 +1482,16 @@ onBeforeUnmount(() => {
   line-height: 1.12;
   letter-spacing: 0;
   overflow-wrap: break-word;
-  text-shadow: 0 1px 11px rgba(0, 0, 0, 0.76);
+  text-shadow: 0 1px 11px var(--radial-shadow-strong);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.radial-menu__item--nested .radial-menu__label {
+  min-height: 11px;
+  font-size: 9.5px;
+  font-weight: 500;
+  line-height: 1.05;
 }
 
 .radial-menu__center {
@@ -1036,22 +1506,22 @@ onBeforeUnmount(() => {
   align-content: center;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--radial-center-text);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.12;
   letter-spacing: 0;
   text-align: center;
-  animation: radial-center-text 300ms ease both;
-  animation-delay: 180ms;
+  animation: radial-center-text 150ms ease both;
+  animation-delay: 90ms;
   transition:
-    color 420ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+    color var(--radial-motion-hover) var(--radial-ease-out),
+    transform var(--radial-motion-hover) var(--radial-ease-out);
 }
 
 .radial-menu__center:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--radial-text-hover);
   transform: translate(-50%, -50%) scale(1.025);
 }
 
@@ -1064,64 +1534,83 @@ onBeforeUnmount(() => {
 }
 
 .radial-menu--closing .radial-menu__action-layer--items .radial-menu__item {
-  animation: radial-action-item-leave-center 87ms cubic-bezier(0.45, 0, 0.9, 0.48) both;
+  animation: radial-action-item-leave-center 44ms var(--radial-ease-in) both;
+  animation-delay: var(--close-reverse-delay, 0ms);
+}
+
+.radial-menu--closing .radial-menu__nested-layer .radial-menu__item {
+  animation: radial-action-item-leave-center 44ms var(--radial-ease-in) both;
   animation-delay: var(--close-reverse-delay, 0ms);
 }
 
 .radial-menu--closing .radial-menu__action-segments .radial-menu__segment-base {
-  animation: radial-segment-fold 150ms cubic-bezier(0.45, 0, 0.9, 0.48) both;
+  animation: radial-segment-fold 75ms var(--radial-ease-in) both;
   animation-delay: var(--close-reverse-delay, 0ms);
 }
 
-.radial-menu--closing .radial-menu__action-segments .radial-menu__segment-highlight {
+.radial-menu--closing .radial-menu__nested-segments .radial-menu__segment-base {
+  animation: radial-segment-fold 75ms var(--radial-ease-in) both;
+  animation-delay: var(--close-reverse-delay, 0ms);
+}
+
+.radial-menu--closing .radial-menu__action-segments .radial-menu__segment-highlight,
+.radial-menu--closing .radial-menu__action-segments .radial-menu__segment-sheen {
   transition: none;
-  animation: radial-highlight-hide 80ms ease both;
+  animation: radial-highlight-hide 40ms ease both;
+}
+
+.radial-menu--closing .radial-menu__nested-segments .radial-menu__segment-highlight,
+.radial-menu--closing .radial-menu__nested-segments .radial-menu__segment-sheen {
+  transition: none;
+  animation: radial-highlight-hide 40ms ease both;
 }
 
 .radial-menu--closing .radial-menu__main-items .radial-menu__item {
-  animation: radial-item-fold 150ms cubic-bezier(0.45, 0, 0.9, 0.48) both;
+  animation: radial-item-fold 75ms var(--radial-ease-in) both;
   animation-delay: var(--close-reverse-delay, 0ms);
 }
 
 .radial-menu--closing.radial-menu--has-actions .radial-menu__main-items .radial-menu__item {
-  animation-delay: calc(320ms + var(--close-reverse-delay, 0ms));
+  animation-delay: calc(160ms + var(--close-reverse-delay, 0ms));
 }
 
 .radial-menu--closing .radial-menu__main-segments .radial-menu__segment-base {
-  animation: radial-segment-fold 150ms cubic-bezier(0.45, 0, 0.9, 0.48) both;
+  animation: radial-segment-fold 75ms var(--radial-ease-in) both;
   animation-delay: var(--close-reverse-delay, 0ms);
 }
 
 .radial-menu--closing.radial-menu--has-actions .radial-menu__main-segments .radial-menu__segment-base {
-  animation-delay: calc(320ms + var(--close-reverse-delay, 0ms));
+  animation-delay: calc(160ms + var(--close-reverse-delay, 0ms));
 }
 
-.radial-menu--closing .radial-menu__main-segments .radial-menu__segment-highlight {
+.radial-menu--closing .radial-menu__main-segments .radial-menu__segment-highlight,
+.radial-menu--closing .radial-menu__main-segments .radial-menu__segment-sheen {
   transition: none;
-  animation: radial-highlight-hide 90ms ease both;
-  animation-delay: 60ms;
+  animation: radial-highlight-hide 45ms ease both;
+  animation-delay: 30ms;
 }
 
-.radial-menu--closing.radial-menu--has-actions .radial-menu__main-segments .radial-menu__segment-highlight {
-  animation-delay: 380ms;
+.radial-menu--closing.radial-menu--has-actions .radial-menu__main-segments .radial-menu__segment-highlight,
+.radial-menu--closing.radial-menu--has-actions .radial-menu__main-segments .radial-menu__segment-sheen {
+  animation-delay: 190ms;
 }
 
 .radial-menu--closing .radial-menu__center-orb {
-  animation: radial-center-fold 150ms cubic-bezier(0.45, 0, 0.9, 0.48) both;
-  animation-delay: 320ms;
+  animation: radial-center-fold 75ms var(--radial-ease-in) both;
+  animation-delay: 160ms;
 }
 
 .radial-menu--closing.radial-menu--has-actions .radial-menu__center-orb {
-  animation-delay: 640ms;
+  animation-delay: 320ms;
 }
 
 .radial-menu--closing .radial-menu__center {
-  animation: radial-center-text-fold 110ms ease both;
-  animation-delay: 310ms;
+  animation: radial-center-text-fold 55ms ease both;
+  animation-delay: 155ms;
 }
 
 .radial-menu--closing.radial-menu--has-actions .radial-menu__center {
-  animation-delay: 630ms;
+  animation-delay: 315ms;
 }
 
 @keyframes radial-center-pop {
@@ -1288,14 +1777,28 @@ onBeforeUnmount(() => {
     height: 52px;
   }
 
+  .radial-menu__item--nested {
+    width: 56px;
+    height: 40px;
+  }
+
   .radial-menu__icon {
     width: 21px;
     height: 21px;
   }
 
+  .radial-menu__item--nested .radial-menu__icon {
+    width: 16px;
+    height: 16px;
+  }
+
   .radial-menu__label,
   .radial-menu__center {
     font-size: 11px;
+  }
+
+  .radial-menu__item--nested .radial-menu__label {
+    font-size: 8.5px;
   }
 }
 </style>
