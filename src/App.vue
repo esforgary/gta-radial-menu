@@ -1506,7 +1506,7 @@ onBeforeUnmount(() => {
 
 .radial-menu__nested-segments .radial-menu__segment-base {
   animation: radial-segment-pop 210ms var(--radial-ease-out) both;
-  animation-delay: 30ms;
+  animation-delay: calc(30ms + var(--delay, 0ms));
 }
 
 .radial-menu__item {
@@ -1589,7 +1589,7 @@ onBeforeUnmount(() => {
 
 .radial-menu__nested-layer .radial-menu__item {
   animation: radial-item-pop 190ms var(--radial-ease-out) both;
-  animation-delay: 42ms;
+  animation-delay: calc(42ms + var(--delay, 0ms));
 }
 
 .radial-menu__action-layer--switch-enter .radial-menu__item {
